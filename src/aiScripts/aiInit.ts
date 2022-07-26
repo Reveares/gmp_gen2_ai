@@ -8,9 +8,9 @@ import { initNewWorldNpcs } from "./initNewWorldNpcs";
 
 
 
-export function initAiState(): AiState {
+export function initAiState(waynet?: revmp.Waynet): AiState {
     // TODO: Avoid fixed paths
-    const aiState = new AiState('./waynet/newworld.wp', './waynet/newworld.fp')
+    const aiState = new AiState('./waynet/newworld.wp', './waynet/newworld.fp', waynet)
     const updateLoop = new AiUpdateLoop(aiState)
     const worldStateEventHandler = new AiWorldStateEventHandler(aiState)
     const dialogueHandler = new AiDialogueHandler(aiState)
