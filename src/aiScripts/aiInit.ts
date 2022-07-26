@@ -18,7 +18,7 @@ export function initAiState(waynet?: revmp.Waynet): AiState {
 
 
     aiEventHandler.initEventHandler()
-    setInterval(updateLoop.updateAll.bind(updateLoop), 50);
+    revmp.on("update", () => updateLoop.updateAll());
     /*const testMonster = new OrcElite()
     console.log("monster id: " + testMonster.id)
     aiStateFunctions.spawnNpc(testMonster, "HAFEN", "NEWWORLD\\NEWWORLD.ZEN")
