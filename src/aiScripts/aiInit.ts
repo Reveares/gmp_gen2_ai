@@ -8,10 +8,9 @@ import { initNewWorldNpcs } from "./initNewWorldNpcs";
 
 
 
-export function initAiState(waynet?: revmp.Waynet): AiState {
-    // fixme: the wp/fp files are not automatically copied into the dist folder 
-    // this could confuse users
-    const aiState = new AiState('./dist/aiScripts/newworld.wp', './dist/aiScripts/newworld.fp', waynet)
+export function initAiState(): AiState {
+    // TODO: Avoid fixed paths
+    const aiState = new AiState('./waynet/newworld.wp', './waynet/newworld.fp')
     const updateLoop = new AiUpdateLoop(aiState)
     const worldStateEventHandler = new AiWorldStateEventHandler(aiState)
     const dialogueHandler = new AiDialogueHandler(aiState)
@@ -19,7 +18,7 @@ export function initAiState(waynet?: revmp.Waynet): AiState {
 
 
     aiEventHandler.initEventHandler()
-    revmp.on("update", () => updateLoop.updateAll())
+    setInterval(updateLoop.updateAll.bind(updateLoop), 50);
     /*const testMonster = new OrcElite()
     console.log("monster id: " + testMonster.id)
     aiStateFunctions.spawnNpc(testMonster, "HAFEN", "NEWWORLD\\NEWWORLD.ZEN")
