@@ -13,7 +13,7 @@ import {
 } from "../../aiFunctions/aiUtils";
 
 import { getRotationForPointName} from "../../aiStates/aiStateFunctions/spawnFunctions"
-import { gotoPosition } from "../../waynet/positionFunctions";
+import { updateGotoPos } from "../../waynet/positionFunctions";
 import { IAiPosition } from "../components/iAiPosition";
 import { AiState } from "../../aiStates/aiState";
 import { IWaynet, Waypoint } from "../../waynet/iwaynet";
@@ -348,7 +348,7 @@ export class GotoPosition implements IAiAction {
 
 
     public executeAction(): void {
-        gotoPosition(this.npcPosition, this.target)
+        updateGotoPos(this.npcPosition, this.target)
         const pos = new Vector3(...revmp.getPosition(this.aiId).position);
         if (pos.distanceTo(this.target) < 100) {
             if (revmp.isAnimationActive(this.aiId, getCombatStateBasedAni(this.aiId, "S_RUNL"))) {
@@ -366,6 +366,14 @@ export class GotoPosition implements IAiAction {
     }
 }
 
+function fromRevPos(entity: revmp.Entity, vec: Vector3) {
+    const pos = revmp.getPosition(entity).position;
+    vec.x = pos[0];
+    vec.y = pos[1];
+    vec.z = pos[2];
+    return vec;
+}
+
 
 export class GotoPoint implements IAiAction {
 
@@ -378,23 +386,23 @@ export class GotoPoint implements IAiAction {
     wayroute: Array<Waypoint> | undefined
     aiPos: IAiPosition | undefined
     walkAni: string
+    private readonly cachedVec3: Vector3
 
     constructor(aiId: number, aiState: AiState, targetWaypoint: string, walkAni: string) {
         this.aiId = aiId
         this.shouldLoop = true
         this.aiState = aiState
         this.walkAni = walkAni
+        this.cachedVec3 = new Vector3();
 
         const waynet: IWaynet = getWaynet(this.aiState)
-        const newestPos = new Vector3(...revmp.getPosition(this.aiId).position);
+        const newestPos = fromRevPos(this.aiId, this.cachedVec3);
         this.aiPos = getAiPosition(this.aiState, this.aiId);
-
-        let nearestWp: Waypoint | undefined;
-        if (typeof this.aiPos !== 'undefined') {
-            this.aiPos.currentPos.copy(newestPos);
-            nearestWp = waynet.getNearestWaypoint(newestPos);
+        if (this.aiPos !== undefined) {
+            this.aiPos.lastPosUpdate = revmp.tick;
         }
 
+        const nearestWp = this.aiPos !== undefined ? waynet.getNearestWaypoint(newestPos) : undefined;
         this.startPoint = nearestWp?.wpName ?? ""
 
         // if a freepoint is given, find nearest wp and calculate the route to the nearest wp
@@ -405,17 +413,12 @@ export class GotoPoint implements IAiAction {
         } else {
             const targetFp = waynet.freepoints.get(targetWaypoint)
             if (typeof targetFp !== 'undefined') {
-                const nearestEndWp: Waypoint | undefined = waynet.getNearestWaypoint(targetFp.pos)
-                let nearestEndWpName = ""
-                if (typeof nearestEndWp !== 'undefined') {
-                    nearestEndWpName = nearestEndWp.wpName
-                }
+                const nearestEndWpName = waynet.getNearestWaypoint(targetFp.pos)?.wpName ?? ""
                 this.wayroute = waynet.getWayroute(this.startPoint, nearestEndWpName)
                 const fpToWp: Waypoint = { wpName: "TMP_WAYPOINT", pos: targetFp.pos.clone(), otherWps: [nearestEndWpName] }
 
                 this.wayroute.push(fpToWp)
-            }
-            else {
+            } else {
                 this.shouldLoop = false
             }
         }
@@ -425,15 +428,14 @@ export class GotoPoint implements IAiAction {
     public executeAction(): void {
         if (typeof this.wayroute !== 'undefined' && typeof this.aiPos !== 'undefined' && this.routeIndex < this.wayroute.length) {
             const wpToVisit: Waypoint = this.wayroute[this.routeIndex]
-            gotoPosition(this.aiPos, wpToVisit.pos);
-
-            const newPos = new Vector3(...revmp.getPosition(this.aiId).position);
-            if (newPos.distanceTo(wpToVisit.pos) < 100) {
+            const [newPos, distance] = updateGotoPos(this.aiPos, wpToVisit.pos);
+            if (distance < 100) {
                 this.routeIndex++
-            }
-            else {
-                // TODO: look into newPos.angleTo(wpToVisit.pos)
+            } else {
+                //const ab = newPos.angleTo(wpToVisit.pos) * (180/Math.PI);
                 const y = getRadiansAngleToPoint(newPos.x, newPos.z, wpToVisit.pos.x, wpToVisit.pos.z)
+                // Values are different...
+                //console.log("old: " + y + " new: " + ab)
                 setPlayerAngle(this.aiId, y)
                 // TODO: look into revmp if this is a bug. Without spamming
                 // the animation the bots don't move. But this is not good
@@ -442,8 +444,7 @@ export class GotoPoint implements IAiAction {
                     revmp.startAnimation(this.aiId, getCombatStateBasedAni(this.aiId, this.walkAni))
                 //}
             }
-        }
-        else {
+        } else {
             if (revmp.isAnimationActive(this.aiId, getCombatStateBasedAni(this.aiId, this.walkAni))) {
                 revmp.stopAnimation(this.aiId, getCombatStateBasedAni(this.aiId, this.walkAni))
             }
@@ -454,7 +455,6 @@ export class GotoPoint implements IAiAction {
                     revmp.setRotation(this.aiId, getRotationForPointName(this.aiState, this.targetPoint).toArray() as revmp.Quat)
                 }
             }
-
         }
     }
 }

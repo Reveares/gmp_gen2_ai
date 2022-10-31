@@ -109,7 +109,7 @@ export function setAiDialouge(aiState: AiState, component: IAiDialogue) {
 export function insertBot(aiState: AiState, npc: IAiNpc): void {
     const stateInfo: IAiNpcStatus = { entityId: npc.id, isDead: false, isUnconscious: false, npcInstance: npc.npcInstance }
     const respawnInfo: IAiRespawnInfo = { entityId: npc.id, respawnTime: npc.respawnTime, deathTime: -1 }
-    const positionInfo: IAiPosition = { entityId: npc.id, currentPos: new Vector3(), lastPos: new Vector3(), lastPosUpdate: 0, startWorld: npc.startWorld, startPoint: npc.startPoint }
+    const positionInfo: IAiPosition = { entityId: npc.id, lastPosUpdate: revmp.tick, startWorld: npc.startWorld, startPoint: npc.startPoint }
     const actionDescription: IAiActionDescriptions = { entityId: npc.id, descriptions: npc.actionDescriptions }
     const actionHistory: IAiActionHistory = { entityId: npc.id, lastAttackTime: 0 }
     const attackEvent: IAiAttackEventInfo = { entityId: npc.id, isUnderAttack: false, attackedBy: -1 }

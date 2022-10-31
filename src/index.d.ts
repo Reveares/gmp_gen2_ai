@@ -6,9 +6,9 @@ declare namespace revmp {
    */
   type Entity = number;
 
-  type Vec3 = [number, number, number] | Float32Array;
+  type Vec3 = [number, number, number];
 
-  type Quat = [number, number, number, number] | Float32Array;
+  type Quat = [number, number, number, number];
 
   export enum ItemType {
     MeleeWeapon = 0,

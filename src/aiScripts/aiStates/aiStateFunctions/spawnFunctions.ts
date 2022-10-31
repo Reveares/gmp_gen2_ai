@@ -10,7 +10,6 @@ export function spawnNpcByCoordinates(aiState: AiState, npc: IAiNpc, x: number, 
     revmp.setPosition(npc.id, [x, y, z]);
     const position: IAiPosition | undefined = getAiPosition(aiState, npc.id)
     if (typeof position !== 'undefined') {
-        position.currentPos = new Vector3(x, y, z);
         setAiPosition(aiState, position)
     }
 }
@@ -28,7 +27,6 @@ export function spawnNpc(aiState: AiState, npc: IAiNpc, pointName: string, world
 
     const position: IAiPosition | undefined = getAiPosition(aiState, npc.id)
     if (typeof position !== 'undefined') {
-        position.currentPos.copy(npcPosition);
         setAiPosition(aiState, position)
     }
 }
